@@ -21,6 +21,11 @@ Dockerfiles, shell scripts, Compose files and the 3-tier demo app).
 | **06** | [Docker Fundamentals](./06_Docker_Fundamentals.md) | Containers vs VMs · namespaces & cgroups · Docker Architecture · Images · Containers · Container Lifecycle · Docker Hub & Registries · Commands · Debugging · Cleanup · Exit codes · Swarm intro |
 | **07** | [Docker Images & Dockerfile](./07_Docker_Images_and_Dockerfile.md) | Dockerfile instructions · FROM/RUN/COPY/WORKDIR/ENV/EXPOSE · **CMD vs ENTRYPOINT** · `.dockerignore` · Layers & Build Cache · **Multi-stage Builds** · Image Optimization · Security best practices |
 | **08** | [Docker Networking, Volumes & Compose](./08_Docker_Networking_Volumes_and_Compose.md) | Network drivers · Container-to-container communication · Port Mapping · Volumes · Bind Mounts · tmpfs · Docker Compose · Multi-container 3-tier app walkthrough |
+| **09** | [Kubernetes Fundamentals](./09_Kubernetes_Fundamentals.md) | Why Kubernetes · Cluster architecture · Control Plane & Worker Nodes · API Server · Scheduler · Controller Manager · etcd · kubelet · kubectl · Declarative model · Namespaces |
+| **10** | [Pods, ReplicaSets & Deployments](./10_Kubernetes_Pods_ReplicaSets_and_Deployments.md) | Pods · Pod lifecycle (12-scenario lab) · Labels & Selectors · ReplicaSets · Deployments · Scaling · Rolling Updates · Rollbacks · Blue-Green · Canary · Recreate · StatefulSets & DaemonSets |
+| **11** | [Kubernetes Networking & Services](./11_Kubernetes_Networking_and_Services.md) | Pod networking · CoreDNS & FQDN · Service discovery · ClusterIP · NodePort · LoadBalancer · ExternalName · Headless · Selectors · `port` vs `targetPort` · `ndots:5` |
+| **12** | [Ingress, ConfigMaps & Secrets](./12_Kubernetes_Ingress_ConfigMaps_and_Secrets.md) | ConfigMaps · Secrets & the base64 newline bug · Env injection · Ingress Controller vs resource · Host & path-based routing · `rewrite-target` · TLS termination |
+| **13** | [Storage, HPA & Probes](./13_Kubernetes_Storage_HPA_and_Probes.md) | Volumes · emptyDir · hostPath · PV / PVC · Access modes · StorageClass & dynamic provisioning · HPA · Metrics Server · Liveness / Readiness / Startup probes · Mini-project |
 
 ---
 
@@ -41,10 +46,17 @@ Dockerfiles, shell scripts, Compose files and the 3-tier demo app).
                       └── 08 Networking/Volumes/Compose  ← run a real multi-container app
                              │
                              ▼
-                       (next) Kubernetes → Helm → CI/CD → Terraform → Monitoring → GitOps
+        09 Kubernetes Fundamentals ← orchestrate them across many machines
+               ├── 10 Pods / ReplicaSets / Deployments  ← run & release workloads
+               ├── 11 Networking & Services             ← let them find each other
+               ├── 12 Ingress / ConfigMaps / Secrets    ← expose & configure them
+               └── 13 Storage / HPA / Probes            ← persist, scale & keep them healthy
+                             │
+                             ▼
+                       (next) Troubleshooting → Helm → CI/CD → Terraform → Monitoring → GitOps
 ```
 
-**The thread that runs through all eight:**
+**The thread that runs through all thirteen:**
 > Linux gives you processes, permissions, ports and logs. Shell automates them. Networking connects
 > them. Git versions them. Docker packages them. Compose runs them together.
 > Everything after this (Kubernetes, Helm, Terraform, CI/CD) is the same ideas at larger scale.
@@ -83,16 +95,16 @@ Dockerfiles, shell scripts, Compose files and the 3-tier demo app).
 | **06** | Image = class, container = object. Containers share the host **kernel** → MBs and seconds. A container lives only as long as **PID 1**. |
 | **07** | **Copy dependency manifests before source code** for cache efficiency. `CMD` is overridable, `ENTRYPOINT` is appended to. Multi-stage builds shrink images dramatically. |
 | **08** | Use a **user-defined network** and talk by **service name on the container's own port**. Anything you want to keep goes in a **named volume**. |
+| **09** | Everything goes through the **API server**, and only it touches **etcd**. You declare **desired state**; controllers reconcile reality to match — self-healing is a free side effect. |
+| **10** | Only five Pod **phases** exist (`CrashLoopBackOff` is a container *state*). **`Running != Ready`**. Rolling updates only advance when a new Pod passes **readiness**, and `maxUnavailable: 0` turns a bad deploy into a stalled one instead of an outage. |
+| **11** | `nodePort` → `port` → `targetPort` is the packet's path (`containerPort` is just documentation). **`kubectl get endpoints` is the Service debugging command** — empty means a selector or readiness problem. |
+| **12** | A Secret is **base64-encoded, not encrypted** — RBAC is the real protection, and always use `echo -n`. Editing a ConfigMap does nothing to running pods: **`kubectl rollout restart`**. |
+| **13** | **PV = supply, PVC = demand**, and their lifecycle is independent of the Pod. **No CPU `requests` and no Metrics Server ⇒ no HPA.** **Readiness failure ≠ container restart.** |
 
 ---
 
 ## 🧭 Course roadmap (remaining sessions)
 
-- Kubernetes Fundamentals — architecture, control plane, API server, scheduler, etcd, kubelet, kubectl
-- Kubernetes Pods, ReplicaSets & Deployments — scaling, rolling updates, rollbacks
-- Kubernetes Networking & Services — ClusterIP, NodePort, LoadBalancer, DNS, `port` vs `targetPort`
-- Kubernetes Ingress, ConfigMaps & Secrets — host/path routing, TLS, env vars
-- Kubernetes Storage, HPA & Probes — PV/PVC, StorageClass, metrics-server, liveness/readiness/startup
 - Kubernetes Troubleshooting — `CrashLoopBackOff`, `ImagePullBackOff`, pending pods, DNS
 - Helm — charts, `Chart.yaml`, `values.yaml`, templates, install/upgrade/rollback
 - CI/CD & GitHub Actions — workflows, jobs, steps, runners, secrets, artifacts
