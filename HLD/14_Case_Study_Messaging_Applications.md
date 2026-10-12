@@ -9,13 +9,13 @@
 ---
 
 ## 📑 Table of Contents
-1. [Problem Statement](#1️⃣-problem-statement)
-2. [Functional Requirements](#2️⃣-functional-requirements-fr)
+1. [Problem Statement](#1-problem-statement)
+2. [Functional Requirements](#2-functional-requirements-fr)
 3. [NFR — Message Order](#-nfr-1--message-order)
 4. [NFR — Idempotency](#-nfr-2--idempotency)
 5. [NFR — Consistency vs Availability](#-nfr-3--consistency-vs-availability)
 6. [NFR — Consistency vs Latency](#-nfr-4--consistency-vs-latency)
-7. [Scale Estimation](#4️⃣-scale-estimation)
+7. [Scale Estimation](#4-scale-estimation)
 8. [Read Heavy vs Write Heavy](#-read-heavy-vs-write-heavy)
 9. [Design — Idempotency & UUID v7](#-design--idempotency--uuid-v7)
 10. [Design — Message Chain for Ordering](#-design--message-chain-for-ordering)

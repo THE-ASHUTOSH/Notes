@@ -10,12 +10,12 @@
 
 ## 📑 Table of Contents
 1. [The Specialisation Principle](#-the-specialisation-principle)
-2. [Key-Value](#1️⃣-key-value)
-3. [Document](#2️⃣-document)
+2. [Key-Value](#1-key-value)
+3. [Document](#2-document)
 4. [Addressability](#-addressability--why-size-limits-exist)
-5. [Column Family / Wide Column](#3️⃣-column-family--wide-column)
-6. [Large File / Object](#4️⃣-large-file--object)
-7. [Others: Graph, Vector, OO](#5️⃣-others)
+5. [Column Family / Wide Column](#3-column-family--wide-column)
+6. [Large File / Object](#4-large-file--object)
+7. [Others: Graph, Vector, OO](#5-others)
 8. [Summary Table](#-the-summary-table)
 9. [Choosing the Right Database — Twitter Hashtag](#-choosing-the-right-database--twitter-hashtag)
 10. [Key Terms Recap](#-key-terms-recap)

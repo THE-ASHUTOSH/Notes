@@ -70,27 +70,31 @@ Nothing generated is committed; the artifact is built fresh each run.
 | | |
 |---|---|
 | **One page per note** | `dist/devops/14-kubernetes-troubleshooting.html` |
-| **Sidebar** | Every section and note, with the current one highlighted |
-| **Table of contents** | Per page, built from the `##` / `###` headings |
-| **Prev / next** | Follows the course order |
-| **Syntax highlighting** | Done at build time by Pygments — bash, YAML, Dockerfile, HCL/Terraform, Python, nginx, JSON… |
-| **GitHub-compatible anchors** | `#-session-takeaways` resolves the same here as on GitHub, so in-note TOC links work |
-| **Rewritten links** | `./15_Helm.md` becomes `15-helm.html`, including links that cross sections |
-| **Dark / light** | Follows the system setting; the header button overrides it |
-| **Responsive & printable** | Sidebar collapses on narrow screens; print CSS drops the chrome |
+| **Callouts** | `> ⭐` / `> ⚠️` / `> 💡` / `> 🐛` / `> 💰` blockquotes render as labelled, colour-coded boxes — *Key point*, *Watch out*, *Note*, *Bug in source*, *Costs money* |
+| **Session header** | The opening `> **Topics:** … 📁 Repo:` block becomes a tinted lede card |
+| **Sidebar** | Every section and note, each track with its own accent colour, current page marked |
+| **Contents** | Per-page, built from `##` / `###`, with scroll-spy highlighting the section you're reading |
+| **Reading progress** | A thin bar across the top of the page |
+| **Syntax highlighting** | Build-time Pygments — bash, YAML, Dockerfile, HCL/Terraform, Python, nginx, JSON… ASCII diagrams get a quieter treatment |
+| **Tables** | Scroll containers with sticky headers, so the wide reference tables stay usable |
+| **Prev / next** | Follows the course order; `←` / `→` on the keyboard |
+| **Anchors** | GitHub-compatible, including `-1` / `-2` suffixes for repeated headings, so in-note TOC links work in both places |
+| **Rewritten links** | `./15_Helm.md` becomes `15-helm.html`, including links that cross sections; anything not published as a page falls back to GitHub |
+| **Dark / light** | Follows the system setting; the header button overrides it, remembered per browser |
+| **Typography** | Inter and JetBrains Mono from Google Fonts, with full system fallbacks |
+| **Responsive & printable** | Sidebar becomes a drawer on narrow screens; print CSS drops the chrome |
 
 Sections with no markdown in them are listed as *Coming soon* rather than hidden.
 
 ### JavaScript
 
-There is about 25 lines of inline JS for three conveniences: the theme toggle, the sidebar
-filter box, and the copy-to-clipboard buttons. **The site is fully usable without it** — all
-content, navigation and highlighting are plain HTML and CSS.
+Roughly 90 lines of inline JS cover the theme toggle, the sidebar filter and drawer, the
+copy buttons, the reading-progress bar, scroll-spy and keyboard shortcuts. **The site is
+fully usable without it** — all content, navigation, highlighting and layout are plain HTML
+and CSS.
 
-There is no full-text search; the sidebar filter matches note titles. Use GitHub's own search
-for content.
-
----
+There is no full-text search; the sidebar filter matches note titles. Use GitHub's own
+search for content.
 
 ## Adding a new note
 

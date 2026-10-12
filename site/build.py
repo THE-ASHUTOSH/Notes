@@ -33,6 +33,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 SITE_TITLE = "Programming Notes"
+# Files that are in the repo but not published as pages (site/, .github/ ...)
+# link out to GitHub instead of dangling.
+REPO_URL = "https://github.com/THE-ASHUTOSH/Notes/blob/main"
 SKIP_DIRS = {".git", ".github", "site", "dist", "docs", "node_modules",
              "__pycache__", ".vscode", ".idea"}
 
@@ -180,6 +183,8 @@ def make_renderer(note_dir, link_map):
     link_map: repo-relative '<Section>/<file>.md' -> output href ('devops/x.html')."""
     md = MarkdownIt("default")
     headings = []
+    seen = {}        # slug -> times used, for GitHub's -1 / -2 suffixes
+    stack = []       # resolved ids, so heading_close reuses heading_open's
 
     def fence(self, tokens, idx, options, env):
         token = tokens[idx]
@@ -198,11 +203,15 @@ def make_renderer(note_dir, link_map):
         if body is None:
             body = html.escape(token.content)
 
-        label = html.escape(lang) if lang else ""
+        # ASCII diagrams and unlabelled blocks get a quieter treatment
+        plain = lang in ("", "text", "plaintext")
+        label = "" if plain else html.escape(lang)
         return (
-            '<div class="codeblock">'
+            f'<div class="codeblock{" plain" if plain else ""}">'
+            '<div class="bar">'
             + (f'<span class="lang">{label}</span>' if label else "")
             + '<button class="copy" type="button" aria-label="Copy code">Copy</button>'
+            "</div>"
             + f'<pre class="highlight"><code>{body}</code></pre>'
             "</div>\n"
         )
@@ -210,7 +219,11 @@ def make_renderer(note_dir, link_map):
     def heading_open(self, tokens, idx, options, env):
         token = tokens[idx]
         raw = tokens[idx + 1].content
-        hid = gh_slug(raw)
+        base = gh_slug(raw)
+        n = seen.get(base, 0)
+        seen[base] = n + 1
+        hid = base if n == 0 else f"{base}-{n}"
+        stack.append(hid)
         level = int(token.tag[1])
         if level in (2, 3):
             headings.append((level, hid, strip_trailing_emoji(raw) or raw))
@@ -220,8 +233,7 @@ def make_renderer(note_dir, link_map):
         tag = tokens[idx].tag
         level = int(tag[1])
         if level <= 4:
-            # the matching heading_open is two tokens back
-            hid = gh_slug(tokens[idx - 1].content)
+            hid = stack.pop() if stack else ""
             return (f'<a class="anchor" href="#{html.escape(hid, quote=True)}"'
                     f' aria-label="Link to this section">#</a></{tag}>\n')
         return f"</{tag}>\n"
@@ -239,6 +251,10 @@ def make_renderer(note_dir, link_map):
                 target = link_map.get(key)
                 if target:
                     token.attrSet("href", "../" + target + (m[2] or ""))
+                else:
+                    token.attrSet("href", f"{REPO_URL}/{key}")
+                    token.attrSet("target", "_blank")
+                    token.attrSet("rel", "noopener noreferrer")
         return self.renderToken(tokens, idx, options, env)
 
     md.add_render_rule("fence", fence)
@@ -248,86 +264,228 @@ def make_renderer(note_dir, link_map):
     return md, headings
 
 
-# --------------------------------------------------------------------------- #
-# page template
-# --------------------------------------------------------------------------- #
+INLINE_JS = r"""
+(function () {
+  var root = document.documentElement;
 
-INLINE_JS = """
-(function(){
-  var root=document.documentElement;
-  try{var t=localStorage.getItem('theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
-  var b=document.getElementById('theme');
-  if(b) b.addEventListener('click',function(){
-    var cur=root.getAttribute('data-theme');
-    var dark=cur?cur==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
-    var next=dark?'light':'dark';
-    root.setAttribute('data-theme',next);
-    try{localStorage.setItem('theme',next);}catch(e){}
+  /* theme ---------------------------------------------------------------- */
+  var btn = document.getElementById('theme');
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
   });
-  var f=document.getElementById('filter');
-  if(f) f.addEventListener('input',function(){
-    var q=f.value.toLowerCase();
-    document.querySelectorAll('#nav a').forEach(function(a){
-      a.hidden = q && a.textContent.toLowerCase().indexOf(q)===-1;
+
+  /* mobile drawer -------------------------------------------------------- */
+  var side = document.getElementById('nav');
+  var menu = document.getElementById('menu-btn');
+  var scrim = document.getElementById('scrim');
+  function drawer(open) {
+    if (!side) return;
+    side.classList.toggle('open', open);
+    if (scrim) scrim.hidden = !open;
+    if (menu) menu.setAttribute('aria-expanded', String(open));
+  }
+  if (menu) menu.addEventListener('click', function () { drawer(!side.classList.contains('open')); });
+  if (scrim) scrim.addEventListener('click', function () { drawer(false); });
+
+  /* sidebar filter ------------------------------------------------------- */
+  var f = document.getElementById('filter');
+  if (f) f.addEventListener('input', function () {
+    var q = f.value.trim().toLowerCase();
+    document.querySelectorAll('#nav a').forEach(function (a) {
+      a.hidden = !!q && a.textContent.toLowerCase().indexOf(q) === -1;
     });
-    document.querySelectorAll('#nav .group').forEach(function(g){
-      g.hidden = q && !g.querySelector('a:not([hidden])');
+    document.querySelectorAll('#nav .group').forEach(function (g) {
+      g.hidden = !!q && !g.querySelector('a:not([hidden])');
     });
   });
-  document.querySelectorAll('.copy').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var c=btn.parentElement.querySelector('code');
-      navigator.clipboard.writeText(c.innerText).then(function(){
-        btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy';},1500);
-      },function(){ btn.textContent='Ctrl+C'; });
+
+  /* copy buttons --------------------------------------------------------- */
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var c = b.closest('.codeblock').querySelector('code');
+      var done = function () {
+        b.textContent = 'Copied'; b.classList.add('done');
+        setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(c.innerText).then(done, function () { b.textContent = 'Ctrl+C'; });
+      else b.textContent = 'Ctrl+C';
     });
+  });
+
+  /* reading progress + table-of-contents scroll-spy ---------------------- */
+  var bar = document.getElementById('progress');
+  var links = [].slice.call(document.querySelectorAll('.toc a'));
+  var heads = links.map(function (a) { return document.getElementById(decodeURIComponent(a.hash.slice(1))); });
+  var ticking = false;
+
+  function onScroll() {
+    if (bar) {
+      var h = document.documentElement.scrollHeight - innerHeight;
+      bar.style.width = (h > 0 ? Math.min(100, (scrollY / h) * 100) : 0) + '%';
+    }
+    if (links.length) {
+      var best = 0;
+      for (var i = 0; i < heads.length; i++) {
+        if (heads[i] && heads[i].getBoundingClientRect().top <= 120) best = i;
+      }
+      links.forEach(function (a, i) { a.classList.toggle('active', i === best); });
+      var act = links[best];
+      if (act && act.offsetParent) {
+        var box = act.closest('.toc');
+        var top = act.offsetTop - box.offsetTop;
+        if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 40) {
+          box.scrollTop = top - box.clientHeight / 2;
+        }
+      }
+    }
+    ticking = false;
+  }
+  addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, { passive: true });
+  onScroll();
+
+  /* keyboard ------------------------------------------------------------- */
+  addEventListener('keydown', function (e) {
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+    if (e.key === '/' && !typing) { e.preventDefault(); if (f) { f.focus(); f.select(); } return; }
+    if (e.key === 'Escape') { if (typing) e.target.blur(); drawer(false); return; }
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    var go = function (sel) { var a = document.querySelector(sel); if (a) location.href = a.href; };
+    if (e.key === 'ArrowLeft') go('.pager a.prev');
+    if (e.key === 'ArrowRight') go('.pager a.next');
   });
 })();
 """
 
+# Keep the theme flash-free: this runs before the stylesheet paints.
+THEME_BOOT = ("<script>try{var t=localStorage.getItem('theme');"
+              "if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>")
+
+FONTS = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
+    'family=Inter:wght@400;500;600;700;800&'
+    'family=JetBrains+Mono:wght@400;500;600&display=swap">'
+)
+
+# One accent colour per section, so the sidebar and cards are scannable.
+SECTION_HUES = {
+    "DevOps": "#6366f1",
+    "HLD": "#0ea5e9",
+    "LLD": "#14b8a6",
+    "DSA": "#f59e0b",
+    "RAG": "#ec4899",
+    "Advance JS": "#eab308",
+}
+HUE_CYCLE = ["#6366f1", "#0ea5e9", "#14b8a6", "#f59e0b", "#ec4899", "#eab308", "#8b5cf6"]
+
+
+def hue_for(name, i):
+    return SECTION_HUES.get(name, HUE_CYCLE[i % len(HUE_CYCLE)])
+
+
+# --------------------------------------------------------------------------- #
+# html post-processing
+# --------------------------------------------------------------------------- #
+
+CALLOUTS = [
+    ("⭐", "star"),      # ⭐
+    ("⚠", "warn"),      # ⚠️
+    ("\U0001f4a1", "tip"),   # 💡
+    ("\U0001f41b", "bug"),   # 🐛
+    ("\U0001f4b0", "cost"),  # 💰
+    ("\U0001f4cc", "tip"),   # 📌
+]
+
+
+def decorate(body):
+    """Turn plain markdown output into the richer markup the stylesheet expects."""
+
+    # 1. tables need a scroll container so wide ones don't blow out the column
+    body = re.sub(r"<table>", '<div class="table-wrap"><table>', body)
+    body = re.sub(r"</table>", "</table></div>", body)
+
+    # 2. emoji-led blockquotes become labelled callouts
+    def as_callout(m):
+        inner = m.group(1)
+        head = re.sub(r"<[^>]+>", "", inner).lstrip()
+        for marker, cls in CALLOUTS:
+            if head.startswith(marker):
+                return f'<blockquote class="callout {cls}">{inner}</blockquote>'
+        return m.group(0)
+
+    body = re.sub(r"<blockquote>(.*?)</blockquote>", as_callout, body, flags=re.S)
+
+    # 3. the opening "Topics / Repo" quote is the page lede
+    body = re.sub(r"<blockquote>(\s*<p><strong>Topics:</strong>)",
+                  r'<blockquote class="lede">\1', body, count=1)
+
+    return body
+
+
+# --------------------------------------------------------------------------- #
+# page template
+# --------------------------------------------------------------------------- #
 
 def nav_html(sections, depth, active=None):
     up = "../" * depth
     out = []
-    for sec in sections:
-        out.append('<div class="group">')
+    for i, sec in enumerate(sections):
+        out.append(f'<div class="group" style="--sec:{hue_for(sec["name"], i)}">')
         out.append(f'<h2>{html.escape(sec["name"])}'
-                   f'<span class="count">{len(sec["notes"]) or ""}</span></h2>')
+                   f'<span class="count">{len(sec["notes"]) or "—"}</span></h2>')
         if not sec["notes"]:
-            out.append('<p class="empty">No notes yet.</p>')
+            out.append('<p class="empty">Coming soon</p>')
         for n in sec["notes"]:
             cls = ' class="active"' if n is active else ""
-            num = f'<span class="num">{html.escape(n.num)}</span>' if n.num else ""
-            out.append(f'<a href="{up}{n.href}"{cls}>{num}{html.escape(n.title)}</a>')
+            num = f'<span class="num">{html.escape(n.num)}</span>' if n.num else '<span class="num"></span>'
+            out.append(f'<a href="{up}{n.href}"{cls}>{num}'
+                       f'<span>{html.escape(n.title)}</span></a>')
         out.append("</div>")
     return "\n".join(out)
 
 
-def page(sections, depth, title, body, active=None, toc_html="", pager_html=""):
+def page(sections, depth, title, body, active=None, toc_html="", pager_html="",
+         body_class=""):
     up = "../" * depth
+    desc = ("Study notes on DevOps, system design and more — kept as markdown, "
+            "published as a readable site.")
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
+<meta name="description" content="{html.escape(desc)}">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%93%98</text></svg>">
+{FONTS}
 <link rel="stylesheet" href="{up}assets/style.css">
+{THEME_BOOT}
 </head>
-<body>
+<body class="{body_class}">
 <a class="skip" href="#doc">Skip to content</a>
+<div id="progress" class="progress"></div>
 
 <header class="topbar">
-  <a class="brand" href="{up}index.html">📘 <span>{html.escape(SITE_TITLE)}</span></a>
+  <button id="menu-btn" class="icon-btn" type="button" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="{up}index.html"><span class="logo">&#128218;</span><span class="name">{html.escape(SITE_TITLE)}</span></a>
   <div class="spacer"></div>
-  <input id="filter" type="search" placeholder="Filter notes…" aria-label="Filter notes" autocomplete="off">
-  <button id="theme" class="icon-btn" type="button" aria-label="Toggle colour theme" title="Toggle theme">🌓</button>
+  <input id="filter" type="search" placeholder="Filter notes&hellip;  /" aria-label="Filter notes" autocomplete="off">
+  <button id="theme" class="icon-btn" type="button" aria-label="Toggle colour theme" title="Toggle theme">&#9681;</button>
 </header>
 
 <div class="layout">
   <nav id="nav" class="sidebar" aria-label="Notes navigation">
 {nav_html(sections, depth, active)}
-    <p class="nav-foot">Generated from the markdown files in this repository.</p>
+    <p class="nav-foot"><kbd>/</kbd> filter &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> move between notes<br>
+    Generated from the markdown in this repository.</p>
   </nav>
 
   <main id="doc" class="doc">
@@ -340,6 +498,7 @@ def page(sections, depth, title, body, active=None, toc_html="", pager_html=""):
 {toc_html}
 </div>
 
+<div id="scrim" class="scrim" hidden></div>
 <script>{INLINE_JS}</script>
 </body>
 </html>
@@ -353,7 +512,6 @@ def page(sections, depth, title, body, active=None, toc_html="", pager_html=""):
 def build_css():
     base = read(os.path.join(HERE, "style.css"))
     light = HtmlFormatter(style="default").get_style_defs(".highlight")
-    dark = HtmlFormatter(style="github-dark").get_style_defs(".highlight")
     dark_attr = HtmlFormatter(style="github-dark").get_style_defs(
         ':root[data-theme="dark"] .highlight')
     dark_media = HtmlFormatter(style="github-dark").get_style_defs(
@@ -361,7 +519,7 @@ def build_css():
     return (
         base
         + "\n\n/* ---------- pygments: light ---------- */\n" + light
-        + '\n\n/* ---------- pygments: dark ---------- */\n' + dark_attr
+        + "\n\n/* ---------- pygments: dark ---------- */\n" + dark_attr
         + "\n\n@media (prefers-color-scheme: dark) {\n" + dark_media + "\n}\n"
     )
 
@@ -385,11 +543,12 @@ def build(outdir):
     link_map = {f'{n.section}/{n.rel}': n.href for n in flat}
 
     # --- notes -------------------------------------------------------------
-    for sec in sections:
+    for si, sec in enumerate(sections):
+        hue = hue_for(sec["name"], si)
         for note in sec["notes"]:
             note_dir = os.path.dirname(f'{note.section}/{note.rel}')
             md, headings = make_renderer(note_dir, link_map)
-            body = md.render(read(note.src))
+            body = decorate(md.render(read(note.src)))
 
             toc = ""
             if len(headings) > 1:
@@ -397,7 +556,8 @@ def build(outdir):
                     f'<a class="h{lvl}" href="#{html.escape(hid, quote=True)}">'
                     f"{html.escape(txt)}</a>"
                     for lvl, hid, txt in headings)
-                toc = f'<aside class="toc"><h2>On this page</h2>{items}</aside>'
+                toc = ('<aside class="toc" aria-label="On this page">'
+                       f"<h2>On this page</h2><nav>{items}</nav></aside>")
 
             i = flat.index(note)
             prev_n = flat[i - 1] if i > 0 else None
@@ -406,14 +566,15 @@ def build(outdir):
             if prev_n:
                 parts.append(
                     f'<a class="prev" href="../{prev_n.href}">'
-                    f'<span class="label">← Previous</span>'
+                    f'<span class="label">&larr; Previous</span>'
                     f'<span class="title">{html.escape(prev_n.title)}</span></a>')
             if next_n:
                 parts.append(
                     f'<a class="next" href="../{next_n.href}">'
-                    f'<span class="label">Next →</span>'
+                    f'<span class="label">Next &rarr;</span>'
                     f'<span class="title">{html.escape(next_n.title)}</span></a>')
-            pager = f'<nav class="pager" aria-label="Previous and next note">{"".join(parts)}</nav>' if parts else ""
+            pager = (f'<nav class="pager" aria-label="Previous and next note">'
+                     f'{"".join(parts)}</nav>') if parts else ""
 
             write(os.path.join(outdir, *note.href.split("/")),
                   page(sections, 1, f"{note.title} · {SITE_TITLE}",
@@ -421,35 +582,58 @@ def build(outdir):
 
     # --- home --------------------------------------------------------------
     cards = []
-    for s in sections:
-        target = s["notes"][0].href if s["notes"] else "#"
+    for i, s in enumerate(sections):
+        hue = hue_for(s["name"], i)
+        target = s["notes"][0].href if s["notes"] else "#tracks"
         count = (f'{len(s["notes"])} note' + ("" if len(s["notes"]) == 1 else "s")
                  if s["notes"] else "Coming soon")
-        blurb = f' · {html.escape(s["blurb"])}' if s["blurb"] else ""
-        cards.append(f'<a class="home-card" href="{target}">'
-                     f'<strong>{html.escape(s["name"])}</strong>'
-                     f"<span>{count}{blurb}</span></a>")
+        soon = "" if s["notes"] else " soon"
+        blurb = (f'<span class="b">{html.escape(s["blurb"])}</span>'
+                 if s["blurb"] else "")
+        cards.append(
+            f'<a class="home-card{soon}" href="{target}" style="--sec:{hue}">'
+            f'<span class="n">{count}</span>'
+            f'<strong>{html.escape(s["name"])}</strong>{blurb}</a>')
 
-    home_body = f"""<h1>📘 {html.escape(SITE_TITLE)}</h1>
-<p>Study notes kept as plain markdown in this repository. Every page here is generated from
-the same <code>.md</code> file you can read on GitHub.</p>
+    tracks = []
+    for i, s in enumerate(sections):
+        if not s["notes"]:
+            continue
+        hue = hue_for(s["name"], i)
+        items = "".join(
+            f'<li><a href="{n.href}"><span class="num">{html.escape(n.num) or "&bull;"}</span>'
+            f'<span>{html.escape(n.title)}</span></a></li>' for n in s["notes"])
+        tracks.append(f'<section class="track" style="--sec:{hue}">'
+                      f'<h3>{html.escape(s["name"])}</h3>'
+                      f'<ul class="tracklist">{items}</ul></section>')
+
+    n_notes = len(flat)
+    n_secs = sum(1 for s in sections if s["notes"])
+    words = sum(len(read(n.src).split()) for n in flat)
+
+    home_body = f"""<header class="hero">
+<h1>Programming Notes</h1>
+<p>Long-form study notes on DevOps, system design and the rest &mdash; written as plain
+markdown in this repository, published here as something nicer to read.</p>
+<div class="stats">
+  <span class="stat"><b>{n_notes}</b> notes</span>
+  <span class="stat"><b>{n_secs}</b> tracks</span>
+  <span class="stat"><b>{words // 1000}k</b> words</span>
+</div>
+</header>
+
 <div class="home-grid">{''.join(cards)}</div>
-<h2 id="tracks">Tracks</h2>
-{''.join(
-    f'<h3>{html.escape(s["name"])}</h3><ol class="tracklist">' +
-    ''.join(f'<li><a href="{n.href}">{html.escape(n.title)}</a></li>' for n in s["notes"]) +
-    '</ol>'
-    for s in sections if s["notes"])}"""
+
+<h2 id="tracks">Everything, in order</h2>
+{''.join(tracks)}"""
 
     write(os.path.join(outdir, "index.html"),
-          page(sections, 0, SITE_TITLE, home_body))
+          page(sections, 0, SITE_TITLE, home_body, body_class="home"))
 
-    total = len(flat)
-    print(f"built {os.path.relpath(outdir, ROOT)} — {total + 1} pages "
-          f"({total} notes, {len(sections)} sections)")
+    print(f"built {os.path.relpath(outdir, ROOT)} — {n_notes + 1} pages "
+          f"({n_notes} notes, {len(sections)} sections, ~{words // 1000}k words)")
     for s in sections:
         print(f"  {s['name']:<12} {len(s['notes'])}")
-
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
