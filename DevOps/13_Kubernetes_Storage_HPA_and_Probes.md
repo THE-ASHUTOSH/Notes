@@ -859,4 +859,4 @@ curl http://localhost:8080
 ---
 
 ## ➡️ Next
-**Session 14 — Kubernetes Troubleshooting** *(not yet published in the course repo)*
+[Session 14 — Kubernetes Troubleshooting](./14_Kubernetes_Troubleshooting.md) — everything so far was about making things run. Next: what to do when they do not.

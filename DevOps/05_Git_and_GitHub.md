@@ -1,5 +1,10 @@
 # Session 5 — Git & GitHub 🌿
 
+> **Topics:** Git vs GitHub · Repository & Commits · Branching · Merge & Rebase ·
+> Pull Requests · Merge Conflicts · Basic Git Workflow
+>
+> 📁 Repo: `session5-git-github/` — command references, workflow diagrams and PR examples.
+
 > Git is the **source of truth** for everything in DevOps: application code, Dockerfiles,
 > Kubernetes manifests, Terraform configs, CI/CD pipeline definitions. Every pipeline in later
 > sessions is triggered by a **Git commit**, and GitOps takes this to its logical conclusion —
@@ -1000,6 +1005,49 @@ git bisect start
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **Git vs GitHub** | The distributed VCS vs a hosting/collaboration platform built on it |
+| **Repository** | A project plus its full history (`.git/`) |
+| **The three areas** | **Working directory** → **staging area (index)** → **repository** |
+| **Commit** | An immutable snapshot with a SHA, author, message and parent |
+| **HEAD** | A pointer to your current commit/branch |
+| **Branch** | A movable pointer to a commit — cheap, so branch freely |
+| **`.gitignore`** | Patterns Git should never track (`.env`, `node_modules/`, `__pycache__/`) |
+| **Remote** | A named URL for another copy of the repo (`origin`) |
+| **`fetch` vs `pull`** | Download refs only vs download **and** merge |
+| **Merge** | ⭐ Joins histories, preserving both — safe on shared branches |
+| **Rebase** | ⭐ Replays commits on a new base, **rewriting history** — own branches only |
+| **Fast-forward** | A merge with no divergence; the pointer just moves |
+| **Merge conflict** | The same lines changed on both sides; resolve, `git add`, commit |
+| **`revert`** | A new commit that undoes an old one — ⭐ safe for pushed commits |
+| **`reset`** | Moves the branch pointer (`--soft` / `--mixed` / `--hard`) — local only |
+| **`reflog`** | ⭐ The log of where HEAD has been; how you recover "lost" commits |
+| **`stash`** | Shelve uncommitted work temporarily |
+| **`cherry-pick`** | Apply a single commit from another branch |
+| **Pull request** | A request to merge, plus review, CI checks and discussion |
+| **Branching strategies** | Git Flow, GitHub Flow, trunk-based development |
+| **Tag / SemVer** | A named pointer to a commit; `MAJOR.MINOR.PATCH` |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **Working directory → staging → repository.** `git status` tells you which area everything is in; learn to read it and Git stops being mysterious.
+2. ⭐ **`merge` preserves history (safe on shared branches); `rebase` rewrites it (your own branches only).** Never rebase a branch someone else has pulled.
+3. ⭐ **`revert` for pushed commits, `reset` only for local ones.** Rewriting published history breaks everyone else's clone.
+4. **`git reflog` saves you.** Almost nothing is really lost for ~90 days.
+5. **`fetch` is safe, `pull` changes your files.** `git fetch && git log origin/main..HEAD` before you merge.
+6. ⭐ **`.gitignore` before the first commit.** Once a secret is committed it's in history forever — rotate it, don't just delete the line.
+7. **Conflicts are normal.** Markers → fix → `git add` → commit. Small, frequent merges make them small.
+8. **Write commit messages for the person debugging in six months** — imperative mood, *why* not *what*.
+9. **Tags + SemVer are what CI releases on.** `v1.4.2`: breaking / feature / fix.
+10. ⭐ **Every pipeline in this course is triggered by a Git event**, and GitOps ends with Git as the literal definition of production.
+
+---
+
 ## 🔗 References
 - Official Git cheat sheet — https://git-scm.com/cheat-sheet
 - GitHub education cheat sheet — https://education.github.com/git-cheat-sheet-education.pdf
@@ -1008,3 +1056,10 @@ git bisect start
 - Conventional Commits — https://www.conventionalcommits.org/
 - Learn Git Branching (interactive) — https://learngitbranching.js.org/
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 6 — Docker Fundamentals](./06_Docker_Fundamentals.md) — package the code that Git
+is now tracking.

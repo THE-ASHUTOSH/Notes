@@ -1,5 +1,10 @@
 # Session 7 — Docker Images & Dockerfile 📝
 
+> **Topics:** Dockerfile · FROM, RUN, COPY · WORKDIR, ENV, EXPOSE · CMD vs ENTRYPOINT ·
+> `.dockerignore` · Multi-stage Builds · Image Optimization
+>
+> 📁 Repo: `session6-7-docker/` — the Dockerfiles, `.dockerignore` files and the Python/Node demo apps.
+
 > A **Dockerfile** is Infrastructure as Code for your application's runtime environment.
 > It turns "install these things, copy that, run this" into a **reproducible, version-controlled
 > recipe** that anyone (and any CI runner) can build identically.
@@ -1339,6 +1344,49 @@ COPY --chown=node:node . .        # set ownership
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **Dockerfile** | The reproducible recipe for building an image |
+| **Build context** | The directory sent to the daemon — ⭐ keep it small with `.dockerignore` |
+| **`FROM`** | Base image; `AS <name>` starts a named build stage |
+| **`RUN`** | Executes at **build** time, creating a layer |
+| **`CMD`** | Default command — ⭐ **replaced** entirely by `docker run` arguments |
+| **`ENTRYPOINT`** | Fixed executable — ⭐ run arguments are **appended** to it |
+| **`COPY` vs `ADD`** | Plain copy (prefer) vs copy + auto-extract tars + fetch URLs |
+| **`WORKDIR`** | Sets (and creates) the working directory; better than `RUN cd` |
+| **`ENV` vs `ARG`** | Runtime env var (persists in the image) vs build-time only |
+| **`EXPOSE`** | ⭐ Documentation only — `-p` is what actually publishes a port |
+| **`USER`** | Drop from root; the single biggest security win |
+| **`VOLUME`** | Declares a mount point for persistent data |
+| **`HEALTHCHECK`** | How Docker decides the container is healthy |
+| **`LABEL`** | Image metadata |
+| **Layer caching** | ⭐ A changed layer invalidates every layer after it |
+| **Multi-stage build** | Build in one stage, copy only the artefact into a slim runtime stage |
+| **Distroless / `-slim` / `-alpine`** | Progressively smaller base images, fewer CVEs |
+| **`.dockerignore`** | Keeps `node_modules`, `.git`, `.env` out of the build context |
+| **BuildKit** | The modern builder — parallel stages, cache mounts, secrets |
+| **Image digest** | `@sha256:…` — immutable, unlike a tag |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **Copy dependency manifests before source code.** `COPY requirements.txt` → `RUN pip install` → `COPY . .` keeps the expensive layer cached when only your code changes.
+2. ⭐ **`CMD` is overridable; `ENTRYPOINT` is appended to.** `ENTRYPOINT` + `CMD` together gives a fixed binary with default arguments.
+3. ⭐ **Use exec form `["cmd", "arg"]`, not shell form.** Shell form wraps your process in `/bin/sh -c`, which swallows signals so `SIGTERM` never reaches the app.
+4. ⭐ **Multi-stage builds are the biggest size win there is** — a 1 GB build toolchain becomes a 50 MB runtime image, with far fewer CVEs.
+5. **Chain `RUN` commands and clean up in the same layer.** Deleting a file in a later layer doesn't shrink the image.
+6. ⭐ **`.dockerignore` before anything else.** It speeds up builds, protects the cache, and stops `.env` and `.git` being baked into an image.
+7. ⭐ **Never put secrets in `ENV` or `ARG`** — both are visible in `docker history`. Use BuildKit secrets or runtime injection.
+8. **Add a `USER`.** Root in a container is root on the host if anything escapes.
+9. **`EXPOSE` documents, `-p` publishes.** They are not the same thing.
+10. ⭐ **Bind to `0.0.0.0`, not `127.0.0.1`,** or your app is unreachable from outside the container.
+11. **Pin base image tags** (ideally digests) so a rebuild six months from now produces the same thing.
+
+---
+
 ## 🔗 References
 - Dockerfile reference — https://docs.docker.com/reference/dockerfile/
 - Dockerfile best practices — https://docs.docker.com/build/building/best-practices/
@@ -1346,3 +1394,10 @@ COPY --chown=node:node . .        # set ownership
 - BuildKit — https://docs.docker.com/build/buildkit/
 - Trivy — https://trivy.dev/
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 8 — Docker Networking, Volumes & Compose](./08_Docker_Networking_Volumes_and_Compose.md)
+— make several containers find each other, keep their data, and start together.

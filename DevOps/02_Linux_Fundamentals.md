@@ -1,5 +1,10 @@
 # Session 2 — Linux Fundamentals 🐧
 
+> **Topics:** Linux File System · Essential Linux Commands · Users & Permissions ·
+> Processes · Services · Logs & Basic Troubleshooting
+>
+> 📁 Repo: `session2-linux/` — command cheat sheets, handwritten slide PDFs and practice material.
+
 > **Linux is the heart of DevOps.** Almost every server, container base image, CI runner and
 > Kubernetes node is Linux. If you are shaky here, everything above it (Docker, K8s, Terraform)
 > becomes guesswork.
@@ -1027,8 +1032,54 @@ with `source ~/.bashrc`.
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **Kernel** | The core that manages CPU, memory, devices and processes — shared by every container |
+| **Shell** | The program that interprets your commands (`bash`, `sh`, `zsh`) |
+| **FHS** | Filesystem Hierarchy Standard — `/etc` config, `/var/log` logs, `/var/lib` state, `/usr/bin` binaries |
+| **Inode** | Filesystem metadata entry; you can run out of these while disk space remains (`df -i`) |
+| **Permissions** | `r=4 w=2 x=1`, applied to user / group / other |
+| **`chmod` / `chown`** | Change permission bits / change owner |
+| **SUID / sticky bit** | Run-as-owner / only-owner-can-delete (e.g. `/tmp`) |
+| **Process** | A running program with a PID; `ps`, `top`, `htop` |
+| **Signal** | Message to a process — `SIGTERM` (15, polite), `SIGKILL` (9, forced) |
+| **Daemon** | Background service, usually managed by **systemd** |
+| **systemd / `systemctl`** | The init system and its control command |
+| **`journalctl`** | Query systemd's logs — `journalctl -u <service>` |
+| **Package manager** | `apt` (Debian/Ubuntu), `yum`/`dnf` (RHEL), `apk` (Alpine) |
+| **Mount point** | Where a filesystem is attached to the tree (`df -h`) |
+| **`$PATH`** | Directories searched for executables — the cause of most "command not found" |
+| **stdin / stdout / stderr** | File descriptors 0, 1, 2 |
+| **SSH** | Encrypted remote shell; key-based auth over passwords |
+| **`sudo`** | Run a command as another user (usually root) |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **`/etc` = config, `/var/log` = logs, `/var/lib` = state.** Those three directories answer most "where is it?" questions — and they reappear as Docker volume mounts.
+2. ⭐ **Permissions are `r=4 w=2 x=1`.** `755` = owner full, everyone else read+execute. `chmod +x` is what makes a script runnable.
+3. **`systemctl status <svc>` → `journalctl -u <svc>` is the start of every investigation.**
+4. ⭐ **`SIGTERM` asks, `SIGKILL` forces.** This is exactly `docker stop` (143) vs `docker kill` (137) later.
+5. **Everything is a file** — devices, sockets and `/proc` entries included.
+6. **Disk problems have two causes:** no space (`df -h`) and no inodes (`df -i`). Check both.
+7. ⭐ **`$PATH` and `which` solve "command not found";** `chmod +x` solves "permission denied".
+8. **Learn `grep`, `find`, `awk`, `sed`, `tail -f` and `less`.** They're the difference between reading logs and searching them.
+9. **A container is just Linux processes** with namespaces and cgroups — none of this knowledge is wasted later.
+
+---
+
 ## 🔗 References
 - Linux `ip` command cheat sheet — http://www.LinuxTrainingAcademy.com
 - `man` pages: `man ls`, `man 7 signal`, `man 5 crontab`
 - `tldr` — https://tldr.sh
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 3 — Shell Scripting](./03_Shell_Scripting.md) — stop typing these commands one at a
+time and start automating them.

@@ -1,5 +1,10 @@
 # Session 6 — Docker Fundamentals 🐳
 
+> **Topics:** Containers vs Virtual Machines · Docker Architecture · Docker Images ·
+> Docker Containers · Docker Hub · Container Lifecycle
+>
+> 📁 Repo: `session6-7-docker/` — shared with Session 7: demo apps, Dockerfiles and command notes.
+
 > Docker solves the single most expensive problem in software delivery: **"it works on my machine."**
 > It packages an application *together with* its dependencies into a portable image that runs
 > identically on your laptop, in CI, and in production.
@@ -977,7 +982,7 @@ docker info ; docker version ; docker login
 
 ---
 
-## 🔑 Key Takeaways
+## 🔑 Docker Rules of Thumb
 
 1. Understand **Docker architecture** deeply (client, daemon, registry; containerd + runc)
 2. Know the difference between **images and containers** (class vs object)
@@ -992,6 +997,45 @@ docker info ; docker version ; docker login
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **Image** | Read-only, layered template — the **class** |
+| **Container** | A running instance of an image — the **object** |
+| **Layer** | One filesystem diff; shared and cached between images |
+| **Registry** | Where images live — Docker Hub, GHCR, ECR |
+| **Tag** | A label on an image (`nginx:1.27`); ⚠️ `:latest` is not "newest", it's just a default name |
+| **Docker daemon** | `dockerd` — does the actual work; the CLI only talks to it |
+| **Namespaces** | Kernel isolation (PID, net, mnt, UTS, IPC, user) — what a container *sees* |
+| **cgroups** | Kernel resource limits (CPU, memory) — what a container *gets* |
+| **Union filesystem** | Stacks read-only layers plus a thin writable layer per container |
+| **PID 1** | ⭐ The container's main process; when it exits, the container stops |
+| **Detached mode** | `-d` — run in the background |
+| **Port publishing** | `-p host:container` |
+| **`HEALTHCHECK`** | Docker-level liveness check |
+| **Exit codes** | 0 clean · 1 app error · 125 daemon · 126 not executable · 127 not found · **137 SIGKILL/OOM** · **143 SIGTERM** |
+| **Dangling image** | An untagged leftover layer (`<none>`) |
+| **`docker system prune`** | Reclaim space — ⚠️ `-a --volumes` deletes data |
+| **Docker Swarm** | Docker's built-in orchestrator; simpler than Kubernetes, far less common |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **Image = class, container = object.** One image, many containers.
+2. ⭐ **Containers share the host kernel** — that's why they're megabytes and start in seconds, while a VM boots a whole OS.
+3. ⭐ **A container lives exactly as long as PID 1.** "My container exits immediately" is almost always a main process that finished or crashed.
+4. **Namespaces isolate what you see; cgroups limit what you get.** Docker is a convenient front-end to Linux kernel features.
+5. **Never use `:latest` in production.** Pin a tag (or better, a digest) so you can say what's running.
+6. ⭐ **137 = OOM/SIGKILL, 143 = SIGTERM, 127 = command not found.** These exit codes carry straight into Kubernetes.
+7. **`docker logs` then `docker inspect` then `docker exec`** — the same outside-in order you'll use with `kubectl`.
+8. **`docker run --rm`** for throwaway containers, or your disk fills with stopped ones.
+9. ⭐ **Set memory and CPU limits in production.** An unbounded container can take down its host.
+10. **Swarm exists and is simpler, but Kubernetes won.** Know the difference; learn Kubernetes.
+
+---
+
 ## 🔗 References
 - Docker overview — https://docs.docker.com/get-started/docker-overview/
 - Docker architecture (GeeksforGeeks) — https://www.geeksforgeeks.org/devops/architecture-of-docker/
@@ -999,3 +1043,10 @@ docker info ; docker version ; docker login
 - Docker Hub — https://hub.docker.com
 - Play with Docker — https://labs.play-with-docker.com
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 7 — Docker Images & Dockerfile](./07_Docker_Images_and_Dockerfile.md) — stop pulling
+other people's images and start building your own, well.

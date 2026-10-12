@@ -1,5 +1,10 @@
 # Session 3 — Shell Scripting 🐚
 
+> **Topics:** Variables · Conditions · Loops · Functions · Arguments ·
+> Pipes & Redirection · Basic Automation Script
+>
+> 📁 Repo: `session3-shell-scripting/` — worked `.sh` examples plus the class automation scripts.
+
 > A shell script is just **the commands you already type, saved in a file** so a machine can run
 > them the same way every time. This is the first real *automation* skill in DevOps: health checks,
 > log cleanup, backups, deployment steps, container entrypoints and CI steps are all shell.
@@ -1263,8 +1268,58 @@ dos2unix script.sh   # fix CRLF
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **Shebang** | `#!/bin/bash` on line 1 — which interpreter runs the file |
+| **`chmod +x`** | Makes the script executable |
+| **Variable** | `NAME="value"` — ⚠️ **no spaces** around `=` |
+| **Quoting** | `"$var"` expands and is safe; `'$var'` is literal; unquoted `$var` word-splits |
+| **Command substitution** | `$(cmd)` — capture a command's output (prefer over backticks) |
+| **Positional parameters** | `$1 $2 …`, `$@` (all, individually), `$#` (count), `$0` (script name) |
+| **Exit code** | `$?` — **0 = success**, non-zero = failure |
+| **`[[ ]]` vs `[ ]`** | Bash conditional (safer, supports `&&`, `=~`) vs POSIX test |
+| **Test operators** | `-eq -ne -lt -gt` (numbers), `=` `!=` (strings), `-f -d -e -z -n` (files/strings) |
+| **Loop** | `for`, `while`, `until`; `break` / `continue` |
+| **Function** | `name() { … }`; ⭐ called as `name`, **never** `name()` |
+| **`local`** | Scopes a variable to a function — otherwise everything is global |
+| **Pipe `\|`** | stdout of one command into stdin of the next |
+| **Redirection** | `>` overwrite, `>>` append, `<` input, `2>` stderr, `&>` both |
+| **`/dev/null`** | The bit bucket — discard output |
+| **Here-document** | `<<EOF … EOF` — a multi-line string literal |
+| **Array** | `arr=(a b c)`, `${arr[@]}`, `${#arr[@]}` |
+| **`set -euo pipefail`** | ⭐ Exit on error, on unset variable, and on a failure anywhere in a pipeline |
+| **`trap`** | Run a cleanup handler on EXIT/ERR/INT |
+| **`bash -x`** | Trace execution line by line |
+| **ShellCheck** | The linter that catches the bugs this table describes |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **`set -euo pipefail` at the top of every script.** Without it a script sails past failures and reports success.
+2. ⭐ **Always quote `"$var"`.** Unquoted variables break on spaces and empty values — the single most common shell bug.
+3. **`NAME="value"` — no spaces around `=`.** `NAME = "value"` runs a command called `NAME`.
+4. ⭐ **Call a function as `my_func`, not `my_func()`.** The parentheses form is a *definition*, not a call.
+5. **`>` overwrites, `>>` appends.** One character between appending to a log and destroying it.
+6. **`$?` is 0 on success.** Check it, or let `set -e` check it for you.
+7. **Use `$(...)`, not backticks** — it nests and reads better.
+8. ⭐ **Run `shellcheck` before you run the script.** It finds quoting and test bugs for free.
+9. **`bash -x script.sh` traces every expanded line** — the fastest way to see what the shell actually did.
+10. **CRLF line endings break scripts on Linux** (`bad interpreter: ^M`). Keep `.sh` files LF — relevant on Windows checkouts.
+
+---
+
 ## 🔗 References
 - Bash manual — https://www.gnu.org/software/bash/manual/
 - ShellCheck — https://www.shellcheck.net/
 - Google Shell Style Guide — https://google.github.io/styleguide/shellguide.html
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 4 — Networking Fundamentals](./04_Networking_Fundamentals.md) — how any of these
+machines actually reach each other.

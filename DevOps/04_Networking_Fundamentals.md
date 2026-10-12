@@ -1,5 +1,10 @@
 # Session 4 — Networking Fundamentals 🌐
 
+> **Topics:** IP Address · Public vs Private IP · Ports · TCP vs UDP · DNS ·
+> HTTP/HTTPS · Basic Networking Commands
+>
+> 📁 Repo: `session4-networking/` — `ip.md`, subnetting notes and the linked networking repositories.
+
 > In DevOps, **everything is a network call**: a browser hitting a load balancer, a container
 > talking to a database, a pod resolving a Service name, a CI runner pulling an image.
 > Most "the app is down" incidents are really **DNS, port, firewall or routing** problems.
@@ -918,6 +923,48 @@ Work **bottom-up through the layers** — each step eliminates one layer.
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **OSI / TCP-IP model** | Layered models; in practice you live at L3 (IP), L4 (TCP/UDP) and L7 (HTTP) |
+| **IP address** | 32-bit identifier, written as four octets (IPv4) |
+| **Subnet mask / CIDR** | Splits an address into **network** and **host** bits; `/24` = 24 network bits |
+| **Usable hosts** | `2^host_bits − 2` (network address and broadcast are reserved) |
+| **Private ranges** | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` (RFC 1918) |
+| **Loopback** | `127.0.0.1` — this machine only |
+| **`0.0.0.0`** | "All interfaces" when binding; "any destination" in a route |
+| **NAT** | Rewrites private addresses to a public one on the way out |
+| **MAC address / ARP** | Layer-2 hardware address / how IP finds the MAC on a LAN |
+| **Port** | 16-bit number identifying a service on a host (0–65535) |
+| **Well-known ports** | 22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, 3306 MySQL, 5432 Postgres, 6379 Redis, 6443 K8s API |
+| **TCP vs UDP** | Reliable, ordered, connection-based vs fast, connectionless |
+| **Three-way handshake** | SYN → SYN-ACK → ACK |
+| **DNS** | Name → IP; records `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `NS` |
+| **TTL** | How long a DNS answer may be cached |
+| **HTTP status classes** | 2xx ok, 3xx redirect, 4xx client error, **5xx server error** |
+| **TLS** | Encryption + identity for HTTPS; terminated at a load balancer or Ingress |
+| **DHCP** | Automatic IP assignment |
+| **Load balancer** | Distributes traffic (L4 = TCP, L7 = HTTP-aware) |
+| **Firewall / security group** | Allows or denies traffic by port, protocol and source |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **Network bits + host bits = 32. Usable hosts = `2^host_bits − 2`.** That one line answers most subnetting questions.
+2. ⭐ **A bigger CIDR number means a smaller network.** `/24` (256 addresses) fits inside `/16` (65,536).
+3. **Memorise the ports:** 22, 53, 80, 443, 3306, 5432, 6379, 6443.
+4. ⭐ **TCP = reliable, UDP = fast.** HTTP/SSH/databases use TCP; DNS and streaming mostly use UDP.
+5. ⭐ **Bind to `0.0.0.0`, not `127.0.0.1`,** or nothing outside the container can reach your app.
+6. **Private IP ranges reappear everywhere** — `docker0` is `172.17.0.0/16`, your VPC is `10.0.0.0/16`, pod networks are `10.244.0.0/16`.
+7. **"It's always DNS."** Resolve the name first, then test the port, then test the path.
+8. ⭐ **Debug in layers:** `ping` (L3) → `telnet`/`nc` host port (L4) → `curl -v` (L7). The first failing layer is the problem.
+9. **4xx is the client's fault, 5xx is the server's.** `502`/`503` from a proxy almost always means the backend is down or has no healthy endpoints.
+10. **A connection that hangs is usually a firewall;** one that's refused immediately means nothing is listening.
+
+---
+
 ## 🔗 References
 
 **From the session's resource list** (github.com/Nency-Ravaliya):
@@ -934,3 +981,10 @@ Work **bottom-up through the layers** — each step eliminates one layer.
 - Linux `ip` command cheat sheet — http://www.LinuxTrainingAcademy.com
 - RFC 1918 (private addresses) — https://www.rfc-editor.org/rfc/rfc1918
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 5 — Git & GitHub](./05_Git_and_GitHub.md) — the source of truth that will trigger
+every pipeline in this course.

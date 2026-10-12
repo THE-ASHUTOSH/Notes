@@ -1,5 +1,10 @@
 # Session 1 — Introduction to DevOps & Microservices 🚀
 
+> **Topics:** Microservices vs Monolith · Microservices Architecture · What is DevOps? ·
+> DevOps Lifecycle · CI/CD Overview · DevOps Tools & Roles
+>
+> 📁 Repo: `session1-devops-engineer-roadmap/` — roadmap notes, PDF slide decks and interview Q&A.
+
 > Foundation session. Before touching a single tool, you need to know **what** we are deploying
 > (architecture), **why** we automate it (DevOps culture), and **how** the work flows (lifecycle + CI/CD).
 
@@ -534,9 +539,29 @@ monitoring for **model drift** on top of normal infrastructure monitoring.
 
 ---
 
+## 🎯 Session Takeaways
+
+1. ⭐ **Microservices buy independent deployability at the cost of operational complexity** — DevOps automation is what pays that cost. A monolith is the right answer for a small team.
+2. **The lifecycle is a loop, not a line:** Plan → Code → Build → Test → Release → Deploy → Operate → Monitor → Plan.
+3. ⭐ **CI = integrate and test every commit. CD = Delivery (manual approval) or Deployment (automatic).** Most organisations run Delivery.
+4. **Every tool in this course maps to one lifecycle stage.** Git to Code, Docker to Build, Kubernetes to Deploy, Prometheus to Monitor.
+5. ⭐ **DevSecOps is shift-left:** security as an automated pipeline stage, not a final audit. A finding at commit time costs 10–100× less.
+6. **GitOps takes "source of truth" literally** — if it isn't in Git, it doesn't exist.
+7. **The roles differ by focus, not by stack:** DevOps engineer, SRE, Platform engineer and Cloud engineer all use the same tools.
+8. ⭐ **DORA metrics are how you know it's working:** deployment frequency, lead time for changes, change failure rate, MTTR.
+
+---
+
 ## 🔗 References
 - Docker overview — https://docs.docker.com/get-started/docker-overview/
 - Docker architecture — https://www.geeksforgeeks.org/devops/architecture-of-docker/
 - OWASP Top 10 — https://owasp.org/www-project-top-ten/
 - Trivy — https://trivy.dev/
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 2 — Linux Fundamentals](./02_Linux_Fundamentals.md) — the operating system every
+container, CI runner and Kubernetes node actually runs on.

@@ -1,5 +1,10 @@
 # Session 8 — Docker Networking, Volumes & Compose 🔗
 
+> **Topics:** Docker Networking · Container-to-Container Communication · Port Mapping ·
+> Docker Volumes · Bind Mounts · Docker Compose · Multi-container Application
+>
+> 📁 Repo: `session8-docker-networking-volume/` — network/volume labs and the 3-tier Compose demo app.
+
 > Single containers are easy. Real applications are **several containers that must find each
 > other, keep their data, and start together**. This session covers the three mechanisms that
 > make that possible: **networks** (communication), **volumes** (persistence) and
@@ -1415,9 +1420,56 @@ docker compose -f a.yml -f b.yml up -d
 
 ---
 
+## 📝 Key Terms Recap
+
+| Term | Meaning |
+|---|---|
+| **`bridge`** | Default driver; a private network on the host (`docker0` = `172.17.0.0/16`) |
+| **User-defined bridge** | ⭐ What you should actually use — gives automatic **DNS by container name** |
+| **`host` network** | No isolation; the container shares the host's stack (Linux only) |
+| **`none`** | No networking at all |
+| **`overlay`** | Multi-host networking (Swarm/Kubernetes territory) |
+| **Port publishing** | `-p HOST:CONTAINER` — ⭐ only needed for traffic from **outside** |
+| **Volume** | Docker-managed storage in `/var/lib/docker/volumes` — ⭐ the default choice |
+| **Bind mount** | A host path mapped into the container — ⭐ for development live-reload |
+| **`tmpfs`** | In-memory only; vanishes on stop — for secrets and scratch data |
+| **Anonymous volume** | An unnamed volume Docker creates; easy to leak |
+| **`docker compose`** | Declarative multi-container stacks on one host |
+| **`services`** | The containers in a Compose file |
+| **`depends_on`** | ⚠️ Waits for **start**, not readiness — pair with a healthcheck |
+| **`healthcheck` + `condition: service_healthy`** | ⭐ The actual fix for startup races |
+| **`build` vs `image`** | Build from a Dockerfile vs pull a published image |
+| **`.env` / variable substitution** | `${VAR}` interpolation in the Compose file |
+| **`profiles`** | Optional services that only start when the profile is enabled |
+| **3-tier app** | frontend → backend → database, each on the appropriate network |
+
+---
+
+## 🎯 Session Takeaways
+
+1. ⭐ **Use a user-defined network and talk by service name on the container's own port.** `http://backend:5000`, never `localhost`, never a published host port.
+2. ⭐ **`localhost` inside a container is that container.** The number one container-networking mistake.
+3. **Only publish ports you need from outside.** A database rarely needs `-p 5432:5432`.
+4. ⭐ **Anything you want to keep goes in a named volume.** A container's writable layer dies with the container.
+5. **Volume for data, bind mount for development source, tmpfs for secrets.**
+6. ⭐ **`docker compose up` replaces a page of `docker run` flags** and makes the stack reviewable in Git.
+7. **`depends_on` waits for start, not readiness.** Add a `healthcheck` and `condition: service_healthy`, or handle retries in the app.
+8. ⭐ **Segment networks by tier** so the frontend container literally cannot reach the database.
+9. ⭐ **`docker compose down -v` deletes your data.** Know that before you type it.
+10. **Compose is single-host.** The moment you need multiple machines, self-healing or rolling updates, you need Kubernetes — which is the next six sessions.
+
+---
+
 ## 🔗 References
 - Docker network drivers — https://docs.docker.com/engine/network/drivers/
 - Docker volumes — https://docs.docker.com/engine/storage/volumes/
 - Docker Compose file reference — https://docs.docker.com/reference/compose-file/
 - Compose networking — https://docs.docker.com/compose/how-tos/networking/
 - Course repo — https://github.com/Nency-Ravaliya/devops-heros
+
+---
+
+## ➡️ Next
+
+[Session 9 — Kubernetes Fundamentals](./09_Kubernetes_Fundamentals.md) — the same ideas, but
+across a fleet of machines instead of one.
