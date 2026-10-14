@@ -41,6 +41,7 @@ SKIP_DIRS = {".git", ".github", "site", "dist", "docs", "node_modules",
 
 BLURBS = {
     "DevOps": "Linux → Docker → Kubernetes → CI/CD → Terraform → GitOps",
+    "Network Architecture": "Sockets → OSI → scaling servers → nginx → HTTP → CDNs",
     "HLD": "High-level system design",
     "LLD": "Low-level design & OOP",
     "DSA": "Data structures & algorithms",
@@ -316,32 +317,15 @@ INLINE_JS = r"""
     });
   });
 
-  /* reading progress + table-of-contents scroll-spy ---------------------- */
+  /* reading progress + back-to-top --------------------------------------- */
   var bar = document.getElementById('progress');
-  var links = [].slice.call(document.querySelectorAll('.toc a'));
-  var heads = links.map(function (a) { return document.getElementById(decodeURIComponent(a.hash.slice(1))); });
+  var top = document.getElementById('top');
   var ticking = false;
 
   function onScroll() {
-    if (bar) {
-      var h = document.documentElement.scrollHeight - innerHeight;
-      bar.style.width = (h > 0 ? Math.min(100, (scrollY / h) * 100) : 0) + '%';
-    }
-    if (links.length) {
-      var best = 0;
-      for (var i = 0; i < heads.length; i++) {
-        if (heads[i] && heads[i].getBoundingClientRect().top <= 120) best = i;
-      }
-      links.forEach(function (a, i) { a.classList.toggle('active', i === best); });
-      var act = links[best];
-      if (act && act.offsetParent) {
-        var box = act.closest('.toc');
-        var top = act.offsetTop - box.offsetTop;
-        if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 40) {
-          box.scrollTop = top - box.clientHeight / 2;
-        }
-      }
-    }
+    var h = document.documentElement.scrollHeight - innerHeight;
+    if (bar) bar.style.width = (h > 0 ? Math.min(100, (scrollY / h) * 100) : 0) + '%';
+    if (top) top.classList.toggle('show', scrollY > 600);
     ticking = false;
   }
   addEventListener('scroll', function () {
@@ -377,6 +361,7 @@ FONTS = (
 # One accent colour per section, so the sidebar and cards are scannable.
 SECTION_HUES = {
     "DevOps": "#6366f1",
+    "Network Architecture": "#f43f5e",
     "HLD": "#0ea5e9",
     "LLD": "#14b8a6",
     "DSA": "#f59e0b",
@@ -422,7 +407,13 @@ def decorate(body):
 
     body = re.sub(r"<blockquote>(.*?)</blockquote>", as_callout, body, flags=re.S)
 
-    # 3. the opening "Topics / Repo" quote is the page lede
+    # 3. the in-document "Table of Contents" becomes a compact card
+    body = re.sub(
+        r'(<h2 id="[^"]*table-of-contents"[^>]*>.*?</h2>\s*<ol>.*?</ol>)',
+        r'<nav class="page-toc" aria-label="Table of contents"></nav>',
+        body, count=1, flags=re.S | re.I)
+
+    # 4. the opening "Topics / Repo" quote is the page lede
     body = re.sub(r"<blockquote>(\s*<p><strong>Topics:</strong>)",
                   r'<blockquote class="lede">\1', body, count=1)
 
@@ -451,7 +442,7 @@ def nav_html(sections, depth, active=None):
     return "\n".join(out)
 
 
-def page(sections, depth, title, body, active=None, toc_html="", pager_html="",
+def page(sections, depth, title, body, active=None, pager_html="",
          body_class=""):
     up = "../" * depth
     desc = ("Study notes on DevOps, system design and more — kept as markdown, "
@@ -478,7 +469,7 @@ def page(sections, depth, title, body, active=None, toc_html="", pager_html="",
   <a class="brand" href="{up}index.html"><span class="logo">&#128218;</span><span class="name">{html.escape(SITE_TITLE)}</span></a>
   <div class="spacer"></div>
   <input id="filter" type="search" placeholder="Filter notes&hellip;  /" aria-label="Filter notes" autocomplete="off">
-  <button id="theme" class="icon-btn" type="button" aria-label="Toggle colour theme" title="Toggle theme">&#9681;</button>
+  <button id="theme" class="icon-btn theme-btn" type="button" aria-label="Switch between light and dark" title="Light / dark"><span class="sun">&#9728;</span><span class="moon">&#9790;</span></button>
 </header>
 
 <div class="layout">
@@ -495,9 +486,9 @@ def page(sections, depth, title, body, active=None, toc_html="", pager_html="",
 {pager_html}
   </main>
 
-{toc_html}
 </div>
 
+<a id="top" class="to-top" href="#doc" aria-label="Back to top" title="Back to top">&uarr;</a>
 <div id="scrim" class="scrim" hidden></div>
 <script>{INLINE_JS}</script>
 </body>
@@ -550,14 +541,6 @@ def build(outdir):
             md, headings = make_renderer(note_dir, link_map)
             body = decorate(md.render(read(note.src)))
 
-            toc = ""
-            if len(headings) > 1:
-                items = "".join(
-                    f'<a class="h{lvl}" href="#{html.escape(hid, quote=True)}">'
-                    f"{html.escape(txt)}</a>"
-                    for lvl, hid, txt in headings)
-                toc = ('<aside class="toc" aria-label="On this page">'
-                       f"<h2>On this page</h2><nav>{items}</nav></aside>")
 
             i = flat.index(note)
             prev_n = flat[i - 1] if i > 0 else None
@@ -578,7 +561,7 @@ def build(outdir):
 
             write(os.path.join(outdir, *note.href.split("/")),
                   page(sections, 1, f"{note.title} · {SITE_TITLE}",
-                       body, note, toc, pager))
+                       body, note, pager))
 
     # --- home --------------------------------------------------------------
     cards = []
