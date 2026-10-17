@@ -769,3 +769,205 @@ pre.highlight code {
   pre.highlight { white-space: pre-wrap; }
   a { color: inherit; text-decoration: underline; }
 }
+
+/* ==========================================================================
+   Short notes — the handwritten revision-card look.
+   build.py puts <body class="paper"> on anything under a "Short Notes" folder.
+   ========================================================================== */
+
+:root {
+  --paper:      #fdfbf3;
+  --paper-rule: #dbe4ef;
+  --paper-marg: #efa8a8;
+  --ink:        #1d2b4a;
+  --ink-soft:   #42546f;
+  --ink-red:    #c0392b;
+  --hi-yellow:  #fff3a3;
+  --hi-green:   #c6f0d6;
+  --hand: "Caveat", "Patrick Hand", "Segoe Print", cursive;
+}
+
+:root[data-theme="dark"] {
+  --paper:      #15171d;
+  --paper-rule: #242a36;
+  --paper-marg: #5c3340;
+  --ink:        #e9ecf3;
+  --ink-soft:   #b9c1d2;
+  --ink-red:    #ff8f80;
+  --hi-yellow:  #4a4113;
+  --hi-green:   #13402a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #15171d;
+    --paper-rule: #242a36;
+    --paper-marg: #5c3340;
+    --ink:        #e9ecf3;
+    --ink-soft:   #b9c1d2;
+    --ink-red:    #ff8f80;
+    --hi-yellow:  #4a4113;
+    --hi-green:   #13402a;
+  }
+}
+
+/* ---------- the sheet ---------- */
+
+body.paper .doc {
+  position: relative;
+  background:
+    linear-gradient(var(--paper-rule) 1px, transparent 1px) 0 0 / 100% 30px,
+    var(--paper);
+  background-attachment: local;
+}
+body.paper .doc::before {
+  content: "";
+  position: absolute; top: 0; bottom: 0; left: 38px;
+  width: 2px; background: var(--paper-marg); opacity: .75;
+}
+body.paper .markdown { color: var(--ink); }
+
+@media (max-width: 880px) {
+  body.paper .doc::before { left: 14px; }
+}
+
+/* ---------- the hand ---------- */
+
+body.paper .markdown h1 {
+  font-family: var(--hand);
+  font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem);
+  font-weight: 700; letter-spacing: 0; line-height: 1.1;
+  color: var(--ink); border: 0; margin-bottom: .15em;
+}
+body.paper .markdown h2 {
+  font-family: var(--hand);
+  font-size: 1.9rem; font-weight: 700; letter-spacing: 0; line-height: 1.2;
+  color: var(--ink);
+  margin: 1.5em 0 .45em; padding: 0 0 .1em;
+  border: 0; border-bottom: 2px solid var(--paper-marg);
+  display: inline-block; max-width: none;
+}
+body.paper .markdown h3 {
+  font-family: var(--hand);
+  font-size: 1.45rem; font-weight: 600; letter-spacing: 0;
+  color: var(--ink-soft); margin: 1.2em 0 .35em;
+}
+body.paper .markdown h4 {
+  font-family: var(--hand); font-size: 1.2rem; color: var(--ink-soft);
+}
+
+body.paper .markdown p,
+body.paper .markdown li {
+  font-family: var(--hand);
+  font-size: 1.28rem; line-height: 1.52;
+  color: var(--ink-soft);
+}
+body.paper .markdown strong { color: var(--ink); font-weight: 700; }
+body.paper .markdown ul, body.paper .markdown ol { padding-left: 1.6em; }
+body.paper .markdown li::marker { color: var(--ink-red); }
+
+body.paper .markdown hr {
+  border: 0; height: 2px; margin: 1.8em 0; opacity: .7;
+  background: repeating-linear-gradient(90deg,
+              var(--paper-marg) 0 14px, transparent 14px 24px);
+}
+
+/* ---------- highlighter ---------- */
+
+body.paper .markdown em {
+  font-style: normal; font-weight: 600; color: var(--ink);
+  background: linear-gradient(transparent 58%, var(--hi-yellow) 58%);
+  padding: 0 .12em;
+}
+body.paper .markdown a {
+  color: var(--ink-red);
+  text-decoration: underline wavy 1px; text-underline-offset: 3px;
+}
+
+/* ---------- boxes, drawn by hand ---------- */
+
+body.paper .markdown blockquote,
+body.paper .markdown blockquote.callout {
+  font-family: var(--hand); font-size: 1.26rem;
+  background: transparent; box-shadow: none;
+  border: 2px solid var(--c-fg, var(--ink-soft));
+  border-radius: 14px 4px 16px 6px / 6px 16px 4px 14px;
+  padding: 12px 18px;
+}
+body.paper .markdown blockquote.callout::after {
+  font-family: var(--sans); background: var(--paper);
+}
+body.paper .markdown blockquote.lede {
+  border-color: var(--ink-red); background: transparent;
+}
+
+/* ---------- tables stay crisp: these are the facts ---------- */
+
+body.paper .table-wrap {
+  background: color-mix(in srgb, var(--paper) 70%, var(--surface));
+  border: 2px solid var(--ink-soft);
+  border-radius: 10px 3px 12px 4px / 4px 12px 3px 10px;
+  box-shadow: none;
+}
+body.paper .markdown table { font-size: 14.5px; }
+body.paper .markdown th {
+  font-family: var(--hand); font-size: 1.05rem;
+  text-transform: none; letter-spacing: 0; color: var(--ink);
+  background: color-mix(in srgb, var(--hi-yellow) 45%, transparent);
+}
+body.paper .markdown td { color: var(--ink-soft); }
+body.paper .markdown td:first-child { color: var(--ink); font-weight: 600; }
+body.paper .markdown tbody tr:hover {
+  background: color-mix(in srgb, var(--hi-yellow) 30%, transparent);
+}
+
+/* ---------- code stays monospace: these are the commands ---------- */
+
+body.paper .codeblock {
+  border: 2px solid var(--ink-soft);
+  border-radius: 10px 3px 12px 4px / 4px 12px 3px 10px;
+  background: color-mix(in srgb, var(--paper) 55%, var(--code-bg));
+  box-shadow: none;
+}
+body.paper .codeblock .bar {
+  background: transparent; border-bottom: 1px dashed var(--paper-marg);
+}
+body.paper pre.highlight code { font-size: 12.8px; }
+body.paper .markdown code {
+  font-size: .8em; color: var(--ink); border-color: transparent;
+  background: color-mix(in srgb, var(--hi-green) 55%, transparent);
+}
+
+/* ---------- the contents card becomes a margin note ---------- */
+
+body.paper .page-toc {
+  background: transparent; box-shadow: none;
+  border: 2px dashed var(--paper-marg);
+  border-radius: 12px 4px 14px 5px / 5px 14px 4px 12px;
+}
+body.paper .page-toc h2 {
+  font-family: var(--hand); font-size: 1.2rem;
+  text-transform: none; letter-spacing: 0; border: 0; color: var(--ink-red);
+}
+body.paper .page-toc a { font-family: var(--hand); font-size: 1.1rem; color: var(--ink-soft); }
+body.paper .page-toc a::before { font-family: var(--hand); color: var(--ink-red); }
+
+body.paper .pager a { font-family: var(--hand); }
+body.paper .pager .title { font-size: 1.18rem; }
+
+/* ---------- sidebar: sub-folder headings ---------- */
+
+.sidebar .subgroup {
+  margin: 12px 0 4px; padding: 0 10px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); opacity: .85;
+}
+.sidebar .subgroup::before { content: "\2514 "; opacity: .5; }
+.sidebar a.sub { padding-left: 20px; font-size: 13px; }
+.sidebar a.sub .num { min-width: 1.6em; }
+
+@media print {
+  body.paper .doc { background: #fff; }
+  body.paper .doc::before { display: none; }
+}

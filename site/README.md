@@ -82,6 +82,7 @@ Nothing generated is committed; the artifact is built fresh each run.
 | **Rewritten links** | `./15_Helm.md` becomes `15-helm.html`, including links that cross sections; anything not published as a page falls back to GitHub |
 | **Dark / light** | Follows the system setting; the header button overrides it, remembered per browser |
 | **Typography** | Inter and JetBrains Mono from Google Fonts, with full system fallbacks |
+| **Short notes** | A `Short Notes/` sub-folder in any section becomes its own group in the sidebar, and its pages render on ruled paper in a handwritten face (Caveat) — tables and code stay in the normal legible fonts |
 | **Responsive & printable** | Sidebar becomes a drawer on narrow screens; print CSS drops the chrome |
 
 Sections with no markdown in them are listed as *Coming soon* rather than hidden.

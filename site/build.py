@@ -102,7 +102,7 @@ def write(path, text):
 # --------------------------------------------------------------------------- #
 
 class Note:
-    __slots__ = ("section", "rel", "src", "num", "title", "out", "href")
+    __slots__ = ("section", "rel", "src", "num", "title", "out", "href", "group")
 
 
 def title_of(src, filename):
@@ -142,8 +142,9 @@ def discover():
             leaf = rel.rsplit("/", 1)[-1]
             if leaf.lower() == "readme.md" and "/" not in rel:
                 return (0, "", "")
+            grp = rel.rsplit("/", 1)[0].lower() if "/" in rel else ""
             m = NUM_RE.match(leaf)
-            return (1, m.group(1).zfill(4) if m else "zzzz", rel.lower())
+            return (1, grp, m.group(1).zfill(4) if m else "zzzz", rel.lower())
 
         found.sort(key=sort_key)
 
@@ -164,6 +165,7 @@ def discover():
             note = Note()
             note.section, note.rel, note.src = name, rel, full
             note.num, note.title = num, title
+            note.group = rel.rsplit("/", 1)[0] if "/" in rel else ""
             note.out = f"{sec_slug}/{out}.html"
             note.href = note.out
             notes.append(note)
@@ -355,7 +357,9 @@ FONTS = (
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
     'family=Inter:wght@400;500;600;700;800&'
-    'family=JetBrains+Mono:wght@400;500;600&display=swap">'
+    'family=JetBrains+Mono:wght@400;500;600&'
+    'family=Caveat:wght@500;600;700&'
+    'family=Patrick+Hand&display=swap">'
 )
 
 # One accent colour per section, so the sidebar and cards are scannable.
@@ -433,8 +437,16 @@ def nav_html(sections, depth, active=None):
                    f'<span class="count">{len(sec["notes"]) or "—"}</span></h2>')
         if not sec["notes"]:
             out.append('<p class="empty">Coming soon</p>')
+        current = None
         for n in sec["notes"]:
-            cls = ' class="active"' if n is active else ""
+            if n.group != current:
+                current = n.group
+                if current:
+                    out.append(f'<h3 class="subgroup">{html.escape(current)}</h3>')
+            cls = "active" if n is active else ""
+            if n.group:
+                cls = (cls + " sub").strip()
+            cls = f' class="{cls}"' if cls else ""
             num = f'<span class="num">{html.escape(n.num)}</span>' if n.num else '<span class="num"></span>'
             out.append(f'<a href="{up}{n.href}"{cls}>{num}'
                        f'<span>{html.escape(n.title)}</span></a>')
@@ -559,9 +571,10 @@ def build(outdir):
             pager = (f'<nav class="pager" aria-label="Previous and next note">'
                      f'{"".join(parts)}</nav>') if parts else ""
 
+            paper = "paper" if note.group.lower().startswith("short") else ""
             write(os.path.join(outdir, *note.href.split("/")),
                   page(sections, 1, f"{note.title} · {SITE_TITLE}",
-                       body, note, pager))
+                       body, note, pager, body_class=paper))
 
     # --- home --------------------------------------------------------------
     cards = []

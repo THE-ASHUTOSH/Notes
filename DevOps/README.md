@@ -13,6 +13,17 @@ say so explicitly and give the correct version.
 
 ---
 
+## ⚡ Two ways to read this
+
+| | |
+|---|---|
+| **Full notes** — below | The whole session: worked examples, source code, every detail |
+| **[⚡ Short Notes](./Short%20Notes/README.md)** | ⭐ **Revision cards** — one page per session. The core idea, the tables worth memorising, the traps and rapid-fire Q&A. Rendered on ruled paper in a handwritten face on the website. |
+
+Every card links back to its full note, and every full note has a card.
+
+---
+
 ## 📚 Sessions
 
 | # | Session | Topics covered |
